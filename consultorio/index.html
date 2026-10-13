@@ -1,0 +1,321 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>QTc Consultorio</title><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="QTc Consultorio"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="theme-color" content="#00796b"><link rel="apple-touch-icon" sizes="180x180" href="icon-180.png"><link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"><link rel="manifest" href="manifest.webmanifest"></head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: una columna tipo instrumento; arriba el resultado fijo (QTc), abajo los datos y el informe sobre papel milimetrado */
+:root{
+  --bg:#f6f7f9; --paper:#ffffff; --grid:rgba(214,74,94,.10); --ink:#17202b; --muted:#5d6876;
+  --line:#dde2e8; --accent:#c8374f; --accent-ink:#ffffff; --ok:#1f7a55; --warn:#b26a00; --bad:#c22a3a; --chip:#eef1f4;
+  --f-display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,sans-serif;
+  --f-num:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1318; --paper:#161b22; --grid:rgba(240,110,130,.08); --ink:#e8edf2; --muted:#98a3b0;
+  --line:#2a323c; --accent:#ef6b80; --accent-ink:#1a0a0e; --ok:#4cc38a; --warn:#e3a33b; --bad:#ff6b78; --chip:#212833; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1318; --paper:#161b22; --grid:rgba(240,110,130,.08); --ink:#e8edf2; --muted:#98a3b0;
+  --line:#2a323c; --accent:#ef6b80; --accent-ink:#1a0a0e; --ok:#4cc38a; --warn:#e3a33b; --bad:#ff6b78; --chip:#212833; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45}
+.wrap{max-width:560px;margin:0 auto;padding-inline:16px;padding-block:12px 40px;display:flex;flex-direction:column;gap:14px}
+header{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+h1{font-family:var(--f-display);font-size:1.6rem;margin:0;letter-spacing:.01em;text-wrap:balance}
+h1 span{color:var(--accent)}
+.sub{color:var(--muted);font-size:.85rem}
+.result{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px 14px;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:12px 12px;
+  display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;box-shadow:0 6px 18px -14px rgba(0,0,0,.5)}
+.qtc{font-family:var(--f-num);font-weight:700;font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+.qtc small{font-size:1rem;color:var(--muted);font-weight:500}
+.lbl{font-family:var(--f-display);text-transform:uppercase;letter-spacing:.08em;font-size:.75rem;color:var(--muted)}
+.pill{justify-self:end;padding:6px 10px;border-radius:999px;font-weight:600;font-size:.85rem;background:var(--chip);color:var(--ink);text-align:center}
+.pill.ok{background:color-mix(in srgb,var(--ok) 16%,transparent);color:var(--ok)}
+.pill.warn{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.pill.bad{background:color-mix(in srgb,var(--bad) 18%,transparent);color:var(--bad)}
+.note{grid-column:1/-1;font-size:.82rem;color:var(--muted)}
+section{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px}
+h2{font-family:var(--f-display);font-size:1.05rem;margin:0;text-transform:uppercase;letter-spacing:.06em}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.full{grid-column:1/-1}
+label{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--muted);min-width:0}
+input,select{font:inherit;font-size:1rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;width:100%;min-width:0}
+input[type=number]{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{flex:1;font:inherit;padding:10px 6px;border:0;background:var(--bg);color:var(--ink);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
+td.n{font-family:var(--f-num);text-align:right;font-variant-numeric:tabular-nums}
+tr.main td{font-weight:700;color:var(--accent)}
+.report{font-size:.95rem;display:flex;flex-direction:column;gap:6px}
+.report p{margin:0}
+.report b{font-family:var(--f-display);letter-spacing:.03em}
+.concl{border-top:1px dashed var(--line);padding-top:8px}
+.sug{background:var(--chip);border-radius:10px;padding:10px;font-size:.9rem}
+.legal{font-size:.78rem;color:var(--muted)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font:inherit;font-weight:600;padding:10px 14px;border-radius:10px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+details summary{cursor:pointer;font-weight:600}
+details p{font-size:.85rem;color:var(--muted);margin:.4em 0 0}
+@media (prefers-reduced-motion:no-preference){.pill{transition:background .2s,color .2s}}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>QTc <span>Consultorio</span></h1>
+    <span class="sub">Fórmula de Ibarrola · ECG de 12 derivaciones</span>
+  </header>
+
+  <div class="result" aria-live="polite">
+    <div>
+      <div class="lbl">QTc Ibarrola</div>
+      <div class="qtc" id="rQtc">—<small> ms</small></div>
+    </div>
+    <div class="pill" id="rPill">Cargá FC y QT</div>
+    <div class="note" id="rNote"></div>
+  </div>
+
+  <section>
+    <h2>Paciente</h2>
+    <div class="grid">
+      <div class="full">
+        <div class="lbl" style="margin-bottom:4px">Sexo</div>
+        <div class="seg" id="sexo">
+          <button type="button" data-v="M" aria-pressed="true">Varón</button>
+          <button type="button" data-v="F" aria-pressed="false">Mujer</button>
+        </div>
+      </div>
+      <label>Edad (años)<input id="edad" type="number" inputmode="numeric" value="24"></label>
+      <label>Deportista
+        <select id="dep"><option value="1" selected>Sí (≥ 4 h/semana)</option><option value="0">No</option></select>
+      </label>
+    </div>
+  </section>
+
+  <section>
+    <h2>Intervalos</h2>
+    <div class="grid">
+      <label>FC (lpm)<input id="fc" type="number" inputmode="decimal" value="52"></label>
+      <label>o RR (ms)<input id="rr" type="number" inputmode="decimal" placeholder="opcional"></label>
+      <label>QT por tangente (ms)<input id="qt" type="number" inputmode="decimal" value="430"></label>
+      <label>Derivación del QT
+        <select id="qtder"><option>DII</option><option>V5</option><option>DII y V5 (promedio)</option><option>V2</option><option>V3</option></select>
+      </label>
+      <label>QRS (ms)<input id="qrs" type="number" inputmode="decimal" value="96"></label>
+      <label>PR (ms)<input id="pr" type="number" inputmode="decimal" value="170"></label>
+      <label>Onda P (ms)<input id="pdur" type="number" inputmode="decimal" value="100"></label>
+      <label>Eje del QRS (°)<input id="eje" type="number" inputmode="numeric" value="70"></label>
+    </div>
+  </section>
+
+  <section>
+    <h2>Resto del ECG</h2>
+    <div class="grid">
+      <label class="full">Ritmo (DII y V5)
+        <select id="ritmo">
+          <option value="RS">Sinusal</option>
+          <option value="ASR">Sinusal con arritmia respiratoria</option>
+          <option value="FA">Fibrilación auricular (promediar 4–6 latidos)</option>
+          <option value="AL">Ritmo auricular ectópico</option>
+          <option value="NU">Ritmo de la unión</option>
+        </select>
+      </label>
+      <label class="full">Morfología del QRS
+        <select id="morfo">
+          <option value="ang">Sin trastorno de conducción</option>
+          <option value="brdi">Trastorno de conducción derecho incompleto (rSr' V1)</option>
+          <option value="brd">Bloqueo de rama derecha</option>
+          <option value="bri">Bloqueo de rama izquierda</option>
+          <option value="tciv">Trastorno de conducción intraventricular inespecífico</option>
+          <option value="hvi">Criterio aislado de voltaje de HVI</option>
+          <option value="qpat">Ondas Q de ≥ 40 ms o ≥ 25 % de la R</option>
+        </select>
+      </label>
+      <label class="full">Segmento ST
+        <select id="st">
+          <option value="iso">Isoeléctrico</option>
+          <option value="rp">Supradesnivel del punto J con ST cóncavo (repolarización precoz)</option>
+          <option value="sup">Supradesnivel del ST no cóncavo</option>
+          <option value="inf">Infradesnivel del ST ≥ 0,5 mm en ≥ 2 derivaciones</option>
+          <option value="brug">Supradesnivel del ST de tipo coved en V1–V2</option>
+        </select>
+      </label>
+      <label class="full">Onda T
+        <select id="ot">
+          <option value="pos">Positiva</option>
+          <option value="v1v3">Negativa V1–V3 (con J/ST supradesnivelado, ≥ 16 años)</option>
+          <option value="v1v4">Negativa V1–V4 sin supradesnivel previo</option>
+          <option value="inf">Negativa en derivaciones inferiores</option>
+          <option value="lat">Negativa en derivaciones laterales</option>
+          <option value="apl">Aplanada / de bajo voltaje</option>
+          <option value="notch">Melladura (bífida) en ≥ 3 derivaciones</option>
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <section>
+    <h2>Todas las fórmulas</h2>
+    <div style="overflow-x:auto"><table id="tf"><thead><tr><th>Fórmula</th><th style="text-align:right">QTc (ms)</th></tr></thead><tbody></tbody></table></div>
+    <p class="legal" id="bazNote"></p>
+  </section>
+
+  <section>
+    <h2>Informe electrocardiográfico</h2>
+    <div class="report" id="rep"></div>
+    <div class="actions">
+      <button class="btn" type="button" id="copy">Copiar informe</button>
+      <button class="btn ghost" type="button" id="reset">Nuevo paciente</button>
+    </div>
+    <p class="legal" id="copyMsg" hidden>Informe copiado.</p>
+    <textarea id="copyArea" hidden readonly style="width:100%;min-height:8rem"></textarea>
+  </section>
+
+  <section>
+    <h2>Criterios usados</h2>
+    <details><summary>Fórmula de Ibarrola</summary>
+      <p>&lt; 60 lpm: QTc = QT − 119·ln(60/FC), con piso en 30 lpm. 60–100 lpm: QTc = QT/RR<sup>β</sup>, β = mín[0,32117 + 0,27536·ln(FC/60); 0,35]. &gt; 100 lpm: QTc = QT + 154·(1 − RR). Con QRS ≥ 120 ms se descuenta la anchura del QRS (tope 180 ms). Sin término de edad.</p></details>
+    <details><summary>Umbrales del QTc</summary>
+      <p>Deportistas (Criterios Internacionales 2017): prolongado ≥ 470 ms en varones y ≥ 480 ms en mujeres; ≥ 500 ms marcadamente prolongado; ≤ 320 ms corto. No deportistas (AHA/ACCF/HRS 2009): ≥ 450 ms varones, ≥ 460 ms mujeres. Corte propuesto del estudio Ibarrola en deportistas por tangente: ≥ 450 ms varones, ≥ 460 ms mujeres (P99).</p></details>
+    <details><summary>Resto del ECG</summary>
+      <p>Bradicardia sinusal ≥ 30 lpm, BAV de 1.er grado &lt; 400 ms, trastorno de conducción derecho incompleto, repolarización precoz, criterio aislado de voltaje de HVI y T negativa V1–V3 con supradesnivel previo se consideran hallazgos del entrenamiento (Criterios Internacionales 2017). Las sugerencias se presentan como "sugiere descartar" y el diagnóstico lo cierra el médico.</p></details>
+  </section>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let sexo='M';
+document.querySelectorAll('#sexo button').forEach(b=>b.addEventListener('click',()=>{
+  sexo=b.dataset.v;document.querySelectorAll('#sexo button').forEach(x=>x.setAttribute('aria-pressed',x===b));calc();}));
+const num=id=>{const v=parseFloat(String($(id).value).replace(',','.'));return isFinite(v)?v:null};
+const r0=v=>Math.round(v);
+
+function ibarrola(qt,fc,qrs,sx){
+  const rr=60/fc;let q;
+  if(fc<60) q=qt-119*Math.log(60/Math.max(fc,30));
+  else if(fc<=100) q=qt/Math.pow(rr,Math.min(0.32117+0.27536*Math.log(fc/60),0.35));
+  else q=qt+154*(1-rr);
+  if(qrs!=null&&qrs>=120){const k=sx==='F'?11.4:9.1;q-=k*(Math.min(qrs,180)-100)/10;}
+  return q;
+}
+function formulas(qt,fc){const rr=60/fc;return{
+  Bazett:qt/Math.sqrt(rr),Fridericia:qt/Math.cbrt(rr),Framingham:qt+154*(1-rr),Hodges:qt+1.75*(fc-60),Rautaharju:qt*(120+fc)/180}}
+
+function grade(q,sx,dep,edad){
+  if(q<=320) return{c:'bad',t:'QTc corto',n:'≤ 320 ms: sugiere descartar síndrome de QT corto (valorar la calculadora QT Congénito).'};
+  if(q<=360) return{c:'warn',t:'QTc en límite inferior',n:'321–360 ms: valorar QT corto solo si hay síncope, arritmia o antecedente familiar.'};
+  if(q>=500) return{c:'bad',t:'QTc marcadamente prolongado',n:'≥ 500 ms: repetir el ECG, descartar causas secundarias (fármacos, K, Mg, Ca) y valorar QT largo congénito.'};
+  let lim=dep?(sx==='F'?480:470):(sx==='F'?460:450); if(edad!=null&&edad<12) lim=460;
+  const ib=sx==='F'?460:450;
+  if(q>=lim) return{c:'bad',t:'QTc prolongado',n:`≥ ${lim} ms (${dep?'deportista, Criterios Internacionales 2017':'AHA/ACCF/HRS 2009'}): repetir el ECG y valorar causas secundarias y QT largo congénito.`};
+  if(dep&&q>=ib) return{c:'warn',t:'QTc en zona gris',n:`≥ ${ib} ms: supera el P99 del estudio Ibarrola en deportistas por tangente; por debajo del corte de los Criterios Internacionales (${lim} ms). Repetir ECG.`};
+  return{c:'ok',t:'QTc dentro del rango',n:`Por debajo de ${dep?ib:lim} ms.`};
+}
+
+function calc(){
+  let fc=num('fc');const rr=num('rr');if(rr&&rr>0){fc=60000/rr;}
+  const qt=num('qt'),qrs=num('qrs'),pr=num('pr'),pd=num('pdur'),eje=num('eje'),edad=num('edad');const dep=$('dep').value==='1';
+  const tb=$('tf').querySelector('tbody');tb.innerHTML='';
+  if(!fc||!qt||fc<15||fc>250||qt<150||qt>800){$('rQtc').innerHTML='—<small> ms</small>';$('rPill').className='pill';$('rPill').textContent='Cargá FC y QT';$('rNote').textContent='';$('rep').innerHTML='';return;}
+  const q=ibarrola(qt,fc,qrs,sexo);const g=grade(q,sexo,dep,edad);
+  $('rQtc').innerHTML=r0(q)+'<small> ms</small>';$('rPill').className='pill '+g.c;$('rPill').textContent=g.t;
+  let extra='';if(fc<30) extra=' FC < 30 lpm: fuera del rango de la fórmula (se calcula a 30 lpm); repetir el ECG tras actividad aeróbica leve y valorar el QT absoluto.';
+  $('rNote').textContent=g.n+extra;
+  const F=formulas(qt,fc);
+  const rows=[['Ibarrola',q,true],...Object.entries(F).map(([k,v])=>[k,v,false])];
+  if(qrs!=null&&qrs>=120) rows.push(['JT (QT − QRS)',qt-qrs,false]);
+  rows.forEach(([k,v,m])=>{const tr=document.createElement('tr');if(m)tr.className='main';tr.innerHTML=`<td>${k}</td><td class="n">${r0(v)}</td>`;tb.appendChild(tr)});
+  $('bazNote').textContent=fc<50?'Bazett subestima el QTc con FC < 50 lpm (Criterios Internacionales 2017).':fc>90?'Bazett sobreestima el QTc con FC > 90 lpm.':'';
+  report({fc,qt,qrs,pr,pd,eje,edad,dep,q,g});
+}
+
+function report(d){
+  const L=[],S=[];let hall=false;const der=$('qtder').value;
+  const ri=$('ritmo').value,mo=$('morfo').value,st=$('st').value,ot=$('ot').value;
+  const rTxt={RS:'Ritmo sinusal',ASR:'Ritmo sinusal con arritmia respiratoria',FA:'Probable fibrilación auricular',AL:'Probable ritmo auricular ectópico',NU:'Probable ritmo de la unión'}[ri];
+  let fcTxt=`FC ${r0(d.fc)} lpm`;
+  if(d.fc<30){fcTxt+=' (bradicardia sinusal profunda, < 30 lpm)';hall=true;S.push('Bradicardia < 30 lpm: valorar la respuesta cronotrópica a una actividad aeróbica leve; si no es adecuada, Holter, ergometría y ecocardiograma.');}
+  else if(d.fc<60) fcTxt+=' (bradicardia sinusal)';else if(d.fc>100){fcTxt+=' (taquicardia)';hall=true;}
+  if(ri==='FA'){hall=true;S.push('Fibrilación auricular: confirmar en tira de ritmo larga; QTc promediado de 4–6 latidos.');}
+  if(ri==='AL'||ri==='NU') hall=true;
+  L.push(['Ritmo',`${rTxt}, ${fcTxt}, valorado en DII y V5.`]);
+  if(d.eje!=null){let t=`Eje del QRS ${r0(d.eje)}° en el plano frontal`;
+    if(d.eje<-30&&d.eje>=-90){if(d.eje<=-45&&(d.qrs==null||d.qrs<120)){t+=', compatible con hemibloqueo anterior izquierdo';}else t+=', desviado a la izquierda';hall=true;}
+    else if(d.eje>90&&d.eje<=180){if(d.eje>=120){t+=', desviado a la derecha; compatible con hemibloqueo posterior izquierdo si se descarta sobrecarga derecha';}else t+=', desviado a la derecha';hall=true;}
+    else if(d.eje<-90||d.eje>180){t+=', en el cuadrante superior derecho';hall=true;}
+    L.push(['Eje',t+'.']);}
+  if(ri!=='FA'&&d.pd!=null){let t=`Onda P de ${r0(d.pd)} ms en DII`;if(d.pd>=120){t+=', de duración prolongada';hall=true;}L.push(['Onda P',t+'.']);}
+  if(ri!=='FA'&&d.pr!=null){let t=`PR de ${r0(d.pr)} ms en DII`;
+    if(d.pr<120){t+=', corto';hall=true;S.push('PR corto: buscar onda delta (preexcitación).');}
+    else if(d.pr>200&&d.pr<400){t+=', compatible con bloqueo AV de 1.er grado';if(!d.dep)hall=true;}
+    else if(d.pr>=400){t+=', compatible con bloqueo AV de 1.er grado marcado (≥ 400 ms)';hall=true;}
+    L.push(['PR',t+'.']);}
+  if(d.qrs!=null){let t=`QRS de ${r0(d.qrs)} ms`;
+    const mt={ang:'',brdi:', con trastorno de conducción derecho incompleto',brd:', compatible con bloqueo de rama derecha',bri:', compatible con bloqueo de rama izquierda',tciv:', compatible con trastorno de conducción intraventricular inespecífico',hvi:', con criterio aislado de voltaje de hipertrofia ventricular izquierda',qpat:', con ondas Q de ≥ 40 ms o ≥ 25 % de la R'}[mo];
+    t+=mt;if(mo==='ang'&&d.qrs>=120) t+=', ensanchado';
+    if(['brd','bri','tciv','qpat'].includes(mo)||(mo==='ang'&&d.qrs>=120)) hall=true;
+    if(mo==='bri') S.push('Bloqueo de rama izquierda: sugiere descartar miocardiopatía (ecocardiograma y RM cardíaca).');
+    if(mo==='qpat') S.push('Ondas Q: sugiere descartar miocardiopatía hipertrófica o probable secuela isquémica (ecocardiograma; RM cardíaca según el caso).');
+    if(mo==='tciv'&&d.qrs>=140) S.push('QRS ≥ 140 ms: sugiere descartar miocardiopatía.');
+    if(mo==='brd') S.push('Bloqueo de rama derecha: si se asocia a desviación del eje a la izquierda, solicitar serología para Chagas.');
+    L.push(['QRS',t+'.']);}
+  const sTxt={iso:'Segmento ST isoeléctrico.',rp:'Supradesnivel del punto J con ST cóncavo, compatible con repolarización precoz.',sup:'Supradesnivel del segmento ST.',inf:'Infradesnivel del segmento ST ≥ 0,5 mm en dos o más derivaciones.',brug:'Supradesnivel del ST de tipo coved en V1–V2, compatible con patrón de Brugada tipo 1.'}[st];
+  if(['sup','inf','brug'].includes(st)) hall=true;
+  if(st==='inf') S.push('Infradesnivel del ST: sugiere descartar miocardiopatía o isquemia (ecocardiograma; RM cardíaca o prueba funcional según el caso).');
+  if(st==='brug') S.push('Patrón coved: sugiere descartar síndrome de Brugada (derivaciones altas V1–V2, consulta con electrofisiología).');
+  if(st==='sup') S.push('Supradesnivel del ST no cóncavo: sugiere descartar síndrome coronario agudo o pericarditis según la clínica.');
+  L.push(['ST',sTxt]);
+  const tTxt={pos:'Onda T positiva.',v1v3:'Onda T negativa en V1–V3 precedida de supradesnivel del punto J y del ST.',v1v4:'Onda T negativa en V1–V4 sin supradesnivel previo.',inf:'Onda T negativa en derivaciones inferiores.',lat:'Onda T negativa en derivaciones laterales.',apl:'Onda T aplanada, de bajo voltaje.',notch:'Onda T con melladura en tres o más derivaciones.'}[ot];
+  if(['v1v4','inf','lat','notch'].includes(ot)||(ot==='v1v3'&&(d.edad!=null&&d.edad<16))) hall=true;
+  if(ot==='lat') S.push('T negativa lateral: sugiere descartar miocardiopatía (ecocardiograma y RM cardíaca).');
+  if(ot==='inf') S.push('T negativa inferior: sugiere descartar miocardiopatía (ecocardiograma).');
+  if(ot==='v1v4') S.push('T negativa V1–V4 sin supradesnivel: sugiere descartar miocardiopatía arritmogénica (ecocardiograma y RM cardíaca).');
+  if(ot==='notch') S.push('Melladura de la T: valorar QT largo congénito (calculadora QT Congénito).');
+  L.push(['Onda T',tTxt]);
+  let qTxt=`QT de ${r0(d.qt)} ms medido por tangente en ${der}; QTc de Ibarrola ${r0(d.q)} ms`;
+  if(d.g.c==='bad'){qTxt+=d.g.t==='QTc corto'?', corto':', prolongado';hall=true;}
+  else if(d.g.c==='warn') qTxt+=d.g.t.includes('inferior')?', en el límite inferior':', en zona gris';
+  L.push(['QTc',qTxt+'.']);
+  if(d.g.c!=='ok') S.push(d.g.n);
+  const concl=hall?'Hallazgos electrocardiográficos descriptos; ver sugerencias.':'ECG sin hallazgos patológicos.';
+  const html=L.map(([k,v])=>`<p><b>${k}:</b> ${v}</p>`).join('')+`<p class="concl"><b>Conclusión:</b> ${concl}</p>`+
+    (S.length?`<div class="sug"><b>Sugerencias (a descartar):</b><br>${S.map(s=>'· '+s).join('<br>')}</div>`:'')+
+    `<p class="legal">Informe electrocardiográfico generado automáticamente: debe ser verificado por el médico.</p>`;
+  $('rep').innerHTML=html;
+  window._txt=L.map(([k,v])=>`${k}: ${v}`).join('\n')+`\nConclusión: ${concl}`+(S.length?'\nSugerencias (a descartar):\n'+S.map(s=>'- '+s).join('\n'):'')+'\nInforme generado automáticamente: debe ser verificado por el médico.';
+}
+
+$('copy').addEventListener('click',()=>{
+  const t=window._txt||'';
+  const done=()=>{$('copyMsg').hidden=false;setTimeout(()=>$('copyMsg').hidden=true,2000)};
+  try{navigator.clipboard.writeText(t).then(done).catch(fb)}catch(e){fb()}
+  function fb(){const a=$('copyArea');a.hidden=false;a.value=t;a.focus();a.select();}
+});
+$('reset').addEventListener('click',()=>{['edad','fc','rr','qt','qrs','pr','pdur','eje'].forEach(i=>$(i).value='');
+  ['ritmo','morfo','st','ot','qtder'].forEach(i=>$(i).selectedIndex=0);$('copyArea').hidden=true;calc();$('fc').focus();});
+document.querySelectorAll('input,select').forEach(e=>e.addEventListener('input',calc));
+$('rr').addEventListener('input',()=>{const r=num('rr');if(r>0)$('fc').value=Math.round(60000/r*10)/10;});
+calc();
+</script>
+<script>/* Instalar QTc Consultorio: Android/PC con el aviso del sistema; iPhone con la guía de Agregar a inicio */
+(function(){var w=window,d=document,dp=null,ua=navigator.userAgent||'';
+var ios=/iPhone|iPad|iPod/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1);
+function sa(){try{return w.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}}
+if(sa())return;
+var bar=d.createElement('div');bar.style.cssText='position:fixed;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:50;background:#00796b;color:#fff;border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:center;font:600 15px system-ui,-apple-system,sans-serif;box-shadow:0 8px 24px -10px rgba(0,0,0,.5)';
+bar.innerHTML='<span style="flex:1">Instalá QTc Consultorio en tu celular</span><button type="button" id="instOk" style="border:0;border-radius:10px;padding:9px 14px;background:#fff;color:#00796b;font:700 15px inherit;cursor:pointer">Instalar</button><button type="button" id="instNo" aria-label="Cerrar" style="border:0;background:transparent;color:#fff;font-size:20px;cursor:pointer">✕</button>';
+function guia(){var g=d.createElement('div');g.style.cssText='position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;justify-content:center';
+g.innerHTML='<div style="background:#fff;color:#123;border-radius:16px 16px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));max-width:520px;width:100%;font:16px/1.5 system-ui,-apple-system,sans-serif"><b style="font-size:18px">Instalar en el iPhone</b><ol style="padding-left:20px;margin:10px 0"><li>Tocá <b>Compartir</b> (el cuadrado con la flecha hacia arriba, abajo en Safari).</li><li>Elegí <b>Agregar a inicio</b>.</li><li>Tocá <b>Agregar</b>: queda el ícono verde en la pantalla.</li></ol><button type="button" style="width:100%;border:0;border-radius:10px;padding:12px;background:#00796b;color:#fff;font:700 16px inherit">Entendido</button><div style="text-align:center;font-size:28px;margin-top:6px">⬇</div></div>';
+g.addEventListener('click',function(e){if(e.target===g||e.target.tagName==='BUTTON')g.remove()});d.body.appendChild(g)}
+function instalar(){if(dp){dp.prompt();dp.userChoice.then(function(r){if(r&&r.outcome==='accepted')bar.remove();dp=null}).catch(function(){})}else if(ios)guia();else alert0()}
+function alert0(){var m=d.createElement('div');m.textContent='En el menú del navegador elegí «Instalar app» o «Agregar a la pantalla principal».';m.style.cssText='position:fixed;left:12px;right:12px;bottom:90px;z-index:60;background:#123;color:#fff;border-radius:10px;padding:10px 12px;font:15px system-ui,sans-serif';d.body.appendChild(m);setTimeout(function(){m.remove()},5000)}
+w.addEventListener('beforeinstallprompt',function(e){e.preventDefault();dp=e});
+w.addEventListener('appinstalled',function(){bar.remove()});
+bar.querySelector('#instOk').onclick=instalar;bar.querySelector('#instNo').onclick=function(){bar.remove()};
+function poner(){d.body.appendChild(bar)}if(d.readyState==='loading')d.addEventListener('DOMContentLoaded',poner);else poner();})();
+</script>
+
+</body></html>
