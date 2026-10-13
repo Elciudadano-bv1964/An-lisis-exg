@@ -317,5 +317,22 @@ w.addEventListener('appinstalled',function(){bar.remove()});
 bar.querySelector('#instOk').onclick=instalar;bar.querySelector('#instNo').onclick=function(){bar.remove()};
 function poner(){d.body.appendChild(bar)}if(d.readyState==='loading')d.addEventListener('DOMContentLoaded',poner);else poner();})();
 </script>
+<script>/* memoria interna: abre sin señal y se actualiza sola en segundo plano */if("serviceWorker" in navigator&&window.isSecureContext)addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})});</script>
+<script>/* Actualizador en segundo plano (como los juegos): muestra el número de versión, busca la versión nueva por wifi,
+   la descarga completa sin interrumpir y la aplica la próxima vez que se abre la app. */
+(function(){var VER='1.0.0',w=window,d=document;
+function insignia(t,nueva){var e=d.getElementById('verApp');if(!e){e=d.createElement('div');e.id='verApp';e.style.cssText='position:fixed;left:10px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:40;font:600 11px system-ui,-apple-system,sans-serif;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;pointer-events:none';(d.body||d.documentElement).appendChild(e)}e.textContent=t;if(nueva){e.style.background='#1f7a55'}}
+function wifiOk(){var c=navigator.connection||navigator.mozConnection||navigator.webkitConnection;if(!navigator.onLine)return false;if(c&&c.saveData)return false;if(c&&c.type&&c.type!=='wifi'&&c.type!=='ethernet'&&c.type!=='unknown')return false;return true}
+function buscar(){if(!wifiOk()||!('serviceWorker' in navigator))return;
+ fetch('version.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null}).then(function(j){if(!j||!j.version||j.version===VER)return;
+  var listo=false;try{listo=localStorage.getItem('verDescargada')===j.version}catch(e){}
+  if(listo){insignia('v'+VER+' · v'+j.version+' lista: se aplica al reabrir',true);return}
+  insignia('v'+VER+' · descargando v'+j.version+'…');
+  navigator.serviceWorker.ready.then(function(reg){reg.update().catch(function(){});var sw=reg.active;if(!sw)return;
+   var canal=new MessageChannel();canal.port1.onmessage=function(ev){if(ev.data&&ev.data.ok){try{localStorage.setItem('verDescargada',j.version)}catch(e){}insignia('v'+VER+' · v'+j.version+' lista: se aplica al reabrir',true)}else insignia('v'+VER)};
+   sw.postMessage({tipo:'descargar'},[canal.port2])})}).catch(function(){})}
+function inicio(){insignia('v'+VER);setTimeout(buscar,5000);setInterval(buscar,30*60*1000);w.addEventListener('online',function(){setTimeout(buscar,3000)})}
+if(d.readyState==='loading')d.addEventListener('DOMContentLoaded',inicio);else inicio();})();
+</script>
 
 </body></html>
